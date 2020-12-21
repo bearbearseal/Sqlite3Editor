@@ -10,18 +10,22 @@
     </head>  
     <body>
         <div>
-            <input id='QueryPage_Statement' type="text">
-            <button id='QueryPage_QueryButton' type="button" onclick='QueryPage.send_query()'>Query</button>
+            <input id='QueryPage_QueryStatement' type="text" size=64>
+            <button id='QueryPage_QueryButton' type="button" onclick='QueryPage.send_execute("Query", $("#QueryPage_QueryStatement").val())'>Query</button>
+        </div>
+        <div>
+            <input id='QueryPage_UpdateStatement' type="text" size=64>
+            <button id='QueryPage_UpdateButton' type="button" onclick='QueryPage.send_execute("Update", $("#QueryPage_UpdateStatement").val())'>Update</button>
             <div id='QueryPage_ErrorMessage'></div>
         </div>
         <div id='QueryPage_Display'>
         </div>
         <script>
             var QueryPage = {
-                send_query : function() {
+                send_execute : function(command, statement) {
                     var toPost = {};
-                    toPost.Command = "Query";
-                    toPost.Statement = $("#QueryPage_Statement").val();
+                    toPost.Command = command;
+                    toPost.Statement = statement;
                     $.ajax({
                         type: "POST",
                         url: 'BackendQuery.php',
@@ -35,7 +39,8 @@
                                     QueryPage.remove_table();
                                     $('#QueryPage_Display').append(QueryPage.create_table(reply.Data.Label, reply.Data.Value));
                                 }
-                                $("#QueryPage_Statement").val('');
+                                //$("#QueryPage_Statement").val('');
+                                $("#QueryPage_ErrorMessage").text('');
                                 //console.log("Query Success");
                                 //console.log(reply);
                             }
@@ -52,8 +57,13 @@
                 },
                 create_table : function(label, value) {
                     var aTable = $('<table />');
-                    aTable.append(QueryPage.create_row(label));
-                    QueryPage.show_data(aTable, value);
+                    aTable.addClass("table");
+                    var tableHead = $('<thead />');
+                    tableHead.append(QueryPage.create_row(label));
+                    aTable.append(tableHead);
+                    var tableBody = $('<tbody />');
+                    QueryPage.show_data(tableBody, value);
+                    aTable.append(tableBody);
                     return aTable;
                 },
                 create_row : function(rowData) {
