@@ -3,10 +3,12 @@
         <script src="../../jquery-3.4.1.js"></script>
         <script src="../../MyDomCreator.js?v=<?=time();?>"></script>
         <link rel="stylesheet" href="../../MyDomStyle.css?v=<?=time();?>">
+        <link rel="stylesheet" href="BrowsePage.css?v=<?=time();?>">
     </head>
     <body>
         <div id="BrowsePage_Control"></div>
         <div id="BrowsePage_Display"></div>
+        <div id="BrowsePage_Bottom"></div>
         <script>
             var BrowsePage_Variable = {
                 tableSelect : {},
@@ -14,6 +16,7 @@
                 disableCurtain : {},
                 inputBox : {},
                 alertBox : {},
+                updateButton : {},
                 init_table : function() {
                     var aTable = TableCreator.create_table('StripeTable');
                     BrowsePage_Variable.theTable = aTable;
@@ -55,21 +58,58 @@
                     };
                     BrowsePage_Variable.alertBox.hide();
                     $("body").append(BrowsePage_Variable.alertBox);
+                },
+                init_update_button : function() {
+                    var updateButton = $('<button />', {text:'Execute Update'});
+                    updateButton.on('click', function(){
+                        console.log('clicked');
+                        var allChanged = BrowsePage_Variable.theTable.find(".ChangedEntry");
+                        var updateData = {};
+                        var tableName;
+                        //var updateData.RowId = {};
+                        for(let key in allChanged) {
+                            if(allChanged.hasOwnProperty(key) && allChanged[key] instanceof HTMLInputElement) {
+                                var parent = $(allChanged[key]).data("Parent");
+                                tableName = parent.data("Table");
+                                var rowid = parent.data("Rowid");
+                                var column = $(allChanged[key]).data("Column"); 
+                                var value = $(allChanged[key]).val();
+                                //updateData.Table = parent.data("Table");
+                                if(updateData[rowid] == undefined) {
+                                    updateData[rowid] = {};
+                                }
+                                updateData[rowid][column] = value;
+                            }
+                        }
+                        BrowsePage_Method.update_table_content(tableName, updateData);
+                    });
+                    BrowsePage_Variable.updateButton = updateButton;
+                    $('#BrowsePage_Bottom').append(BrowsePage_Variable.updateButton);
                 }
             };
             var BrowsePage_Method = {
-                create_table_entry : function(text, rowid, columnName) {
-                    var theEntry = $('<div />');
-                    theEntry.text(text);
-                    return theEntry;
-                },
-                create_data_row : function(tableName, rowData) {
+                create_data_row : function(tableName, columnName, rowData) {
                     //1st element of rowData is always rowid
                     var dataRow = TableCreator.create_table_row();
                     dataRow.data("Table", tableName);
                     dataRow.data("Rowid", rowData[0]);
                     for(var i=1; i<rowData.length; ++i) {
-                        dataRow.add_entry(rowData[i]);
+                        var inputEntry = $('<input />', {type:'text'});
+                        inputEntry.val(rowData[i]);
+                        inputEntry.data("Ori", rowData[i]);
+                        inputEntry.data("Parent", dataRow);
+                        inputEntry.data("Column", columnName[i]);
+                        inputEntry.on('change', function(){
+                            //console.log('changed');
+                            var ori = $(this).data("Ori");
+                            if($(this).val() === ori) {
+                                $(this).removeClass("ChangedEntry");
+                            }
+                            else {
+                                $(this).addClass("ChangedEntry");
+                            }
+                        });
+                        dataRow.add_entry(inputEntry);
                     }
                     var deleteButton = $('<button />', {text: "Remove"});
                     deleteButton.data("Parent", dataRow);
@@ -113,6 +153,25 @@
                         this.add_entry(insertButton);
                     }
                     return insertRow;
+                },
+                update_table_content : function(tableName, theDataMap) {
+                    var toPost = {};
+                    toPost.Command = "Update";
+                    updateStringArray = [];
+                    //console.log("Table: " + tableName);
+                    for(let rowid in theDataMap) {
+                        //console.log("RowId: " + rowid);
+                        var updateString = "Update " + tableName + " Set ";
+                        for(let column in theDataMap[rowid]) {
+                            //console.log(column + " : " + theDataMap[rowid][column]);
+                            updateString += column + "='" + theDataMap[rowid][column] + "',";
+                        }
+                        updateString = updateString.substring(0, updateString.length-1);
+                        updateString += " where rowid==" + rowid;
+                        updateStringArray.push(updateString);
+                        //console.log(updateString);
+                    }
+                    BrowsePage_Ajax.execute_multiple_update(tableName, updateStringArray, 0, 0, 0);
                 }
             };
             var BrowsePage_Ajax = {
@@ -132,32 +191,28 @@
                                 if(reply.Data != undefined) {
                                     BrowsePage_Variable.theTable.clear();
                                     var labelArray = reply.Data.Label;
-                                    var labelRow = TableCreator.create_table_row();
-                                    for(var i=1; i<labelArray.length; ++i) {
-                                        labelRow.add_entry(labelArray[i]);
-                                    }
-                                    labelRow.add_entry("");
-                                    BrowsePage_Variable.theTable.set_label_row(labelRow);
-                                    var allContent = reply.Data.Value;
-                                    for(var i=0; i<allContent.length; ++i) {
-                                        var dataRow = BrowsePage_Method.create_data_row(tableName, allContent[i]);
-                                        /*
-                                        var contentRow = TableCreator.create_table_row();
-                                        for(var j=1; j<allContent[i].length; ++j) {                                            
-                                            contentRow.add_entry(allContent[i][j]);
+                                    if(labelArray != undefined) {
+                                        var labelRow = TableCreator.create_table_row();
+                                        for(var i=1; i<labelArray.length; ++i) {
+                                            labelRow.add_entry(labelArray[i]);
                                         }
-                                        //create a delete button
-                                        contentRow.add_entry($('<button />', {text:'Delete'}));
-                                        BrowsePage_Variable.theTable.add_content_row(contentRow);
-                                        */
-                                        BrowsePage_Variable.theTable.add_content_row(dataRow);
+                                        labelRow.add_entry("");
+                                        BrowsePage_Variable.theTable.set_label_row(labelRow);
+                                        var allContent = reply.Data.Value;
+                                        for(var i=0; i<allContent.length; ++i) {
+                                            var dataRow = BrowsePage_Method.create_data_row(tableName, labelArray, allContent[i]);
+                                            BrowsePage_Variable.theTable.add_content_row(dataRow);
+                                        }
+                                        var insertRow = BrowsePage_Method.create_insert_row(tableName);
+                                        for(var i=1; i<labelArray.length; ++i) {
+                                            insertRow.add_column(labelArray[i]);
+                                        }
+                                        insertRow.add_insert_button();
+                                        BrowsePage_Variable.theTable.add_content_row(insertRow);
                                     }
-                                    var insertRow = BrowsePage_Method.create_insert_row(tableName);
-                                    for(var i=1; i<labelArray.length; ++i) {
-                                        insertRow.add_column(labelArray[i]);
+                                    else {
+                                        BrowsePage_Ajax.get_table_label(tableName);
                                     }
-                                    insertRow.add_insert_button();
-                                    BrowsePage_Variable.theTable.add_content_row(insertRow);
                                 }
                             }
                             else {
@@ -170,8 +225,75 @@
                         }
                     });
                 },
-                update_table_content : function(tableName, rowid, columnName, newValue) {
+                get_table_label : function(tableName) {
                     var toPost = {};
+                    toPost.Command = "Query";
+                    toPost.Statement = "Select name from pragma_table_info('" + tableName + "')";
+                    $.ajax({
+                        type: "POST",
+                        url: 'BackendQuery.php',
+                        data: "postData=" + JSON.stringify(toPost),
+                        success: function(data) {
+                            var reply = JSON.parse(data);
+                            console.log(reply);
+                            if(reply.Status == "Good") {
+                                //redirect
+                                if(reply.Data != undefined) {
+                                    BrowsePage_Variable.theTable.clear();
+                                    var allContent = reply.Data.Value;
+                                    var labelRow = TableCreator.create_table_row();
+                                    for(var i=0; i<allContent.length; ++i) {
+                                        labelRow.add_entry(allContent[i][0]);
+                                    }
+                                    labelRow.add_entry("");
+                                    BrowsePage_Variable.theTable.set_label_row(labelRow);
+                                    var insertRow = BrowsePage_Method.create_insert_row(tableName);
+                                    for(var i=0; i<allContent.length; ++i) {
+                                        insertRow.add_column(allContent[i][0]);
+                                    }
+                                    insertRow.add_insert_button();
+                                    BrowsePage_Variable.theTable.add_content_row(insertRow);
+                                }
+                            }
+                            else {
+                                BrowsePage_Variable.alertBox.show_message("Query error");
+                            }
+                        },
+                        error: function(data) {
+                            BrowsePage_Variable.alertBox.show_message("Query no reply");
+                        }
+                    });
+                },
+                execute_multiple_update : function(tableName, statementArray, index, successCount, errorCount) {
+                    var toPost = {};
+                    toPost.Command = "Update";
+                    toPost.Statement = statementArray[index];
+                    $.ajax({
+                        type: 'POST',
+                        url: 'BackendQuery.php',
+                        data: "postData=" + JSON.stringify(toPost),
+                        success: function(data) {
+                            var reply = JSON.parse(data);
+                            console.log(reply);
+                            if(reply.Status == "Good") {
+                                ++successCount;
+                            }
+                            else {
+                                console.log(reply);
+                                ++errorCount;
+                            }
+                            if(index+1 < statementArray.length) {
+                                BrowsePage_Ajax.execute_multiple_update(tableName, statementArray, index+1, successCount, errorCount);
+                            }
+                            else {
+                                BrowsePage_Variable.alertBox.show_message("Total update: " + successCount + " Total error: " + errorCount);
+                                BrowsePage_Ajax.get_table_content(tableName);
+                            }
+                        },
+                        error: function(data) {
+                            BrowsePage_Variable.alertBox.show_message("Query no reply, Total update: " + successCount + " Total error: " + errorCount + " Unexecuted: " + statementArray.length-successCount-errorCount);
+                        }
+                    });                  
                 },
                 insert_new_row : function(tableName, columnValuePair) {
                     var toPost = {};
@@ -274,6 +396,7 @@
                 BrowsePage_Variable.init_table();
                 BrowsePage_Variable.init_disable_curtain();
                 BrowsePage_Variable.init_alert_box();
+                BrowsePage_Variable.init_update_button();
                 //BrowsePage_Variable.init_disable_curtain();
                 //BrowsePage_Variable.init_alert_box();
 /*

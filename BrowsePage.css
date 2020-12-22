@@ -1,0 +1,8 @@
+.ChangedEntry {
+    background-color: #FFCCCC;
+}
+
+#BrowsePage_Bottom {
+    position: absolute;
+    bottom: 10px;
+}
