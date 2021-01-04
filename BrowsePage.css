@@ -6,3 +6,19 @@
     position: absolute;
     bottom: 10px;
 }
+
+.UserAccount {
+    position:absolute;
+    right: 8px;
+    top: 8px;
+}
+
+.UserAccountDiv {
+    padding:5px;
+}
+
+.UserAccountDiv:Hover {
+    cursor: pointer;
+    background-color: #444444;
+    color: #bbbbbb;
+}

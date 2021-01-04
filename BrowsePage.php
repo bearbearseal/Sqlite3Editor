@@ -7,6 +7,7 @@
     </head>
     <body>
         <div id="BrowsePage_Control"></div>
+        <div id="BrowsePage_UserAccount"></div>
         <div id="BrowsePage_Display"></div>
         <div id="BrowsePage_Bottom"></div>
         <script>
@@ -17,6 +18,8 @@
                 inputBox : {},
                 alertBox : {},
                 updateButton : {},
+                userAccountEdit : {},
+                //userAccount : {},
                 init_table : function() {
                     var aTable = TableCreator.create_table('StripeTable');
                     BrowsePage_Variable.theTable = aTable;
@@ -62,7 +65,6 @@
                 init_update_button : function() {
                     var updateButton = $('<button />', {text:'Execute Update'});
                     updateButton.on('click', function(){
-                        console.log('clicked');
                         var allChanged = BrowsePage_Variable.theTable.find(".ChangedEntry");
                         var updateData = {};
                         var tableName;
@@ -85,6 +87,139 @@
                     });
                     BrowsePage_Variable.updateButton = updateButton;
                     $('#BrowsePage_Bottom').append(BrowsePage_Variable.updateButton);
+                },
+                init_user_account_div : function() {
+                    var container = $('<div />', {class: 'UserAccount'});
+                    var editUserAccount = $('<span />', {text: 'Edit Account', class: 'UserAccountDiv'});
+                    editUserAccount.on('click', function(){
+                        //BrowsePage_Variable.alertBox.show_message('Tala!');
+                        BrowsePage_Variable.userAccountEdit.appear();
+                    });
+                    container.append(editUserAccount);
+                    var logout = $('<span />', {text: 'Logout', class: 'UserAccountDiv'});
+                    logout.on('click', function(){
+                        BrowsePage_Ajax.logout();
+                    });
+                    container.append(logout);
+                    $('body').append(container);
+                },
+                init_edit_account_div : function() {
+                    BrowsePage_Variable.userAccountEdit = $('<div />', {class: 'Centered Z100'});
+                    BrowsePage_Variable.userAccountEdit.appendTo($('body'));
+                    BrowsePage_Variable.userAccountEdit.appear = function() {
+                        BrowsePage_Variable.userAccountEdit.show();
+                        BrowsePage_Variable.disableCurtain.show();
+                    }
+                    //editUsername
+                    var editUsernameContainer = $('<div />');
+                    var editUsernameTable = TableCreator.create_table();
+                    var newUsernameRow = TableCreator.create_table_row();
+                    newUsernameRow.add_entry('New Username');
+                    var newUsernameInput = $('<input />', {type: 'text'});
+                    newUsernameInput.change(function() {
+                        if(newUsernameInput.val().length > 0) {
+                            updateUsernameButton.prop('disabled', false);
+                        }
+                        else {
+                            updateUsernameButton.prop('disabled', true);
+                        }
+                    });
+                    newUsernameRow.add_entry(newUsernameInput);
+                    editUsernameTable.add_content_row(newUsernameRow);
+                    var editUsernamePasswordRow = TableCreator.create_table_row();
+                    editUsernamePasswordRow.add_entry('Password');
+                    var editUsernamePasswordInput = $('<input />', {type: 'password'});
+                    editUsernamePasswordRow.add_entry(editUsernamePasswordInput);
+                    editUsernameTable.add_content_row(editUsernamePasswordRow);
+                    editUsernameContainer.append(editUsernameTable);
+                    var updateUsernameButton = $('<button />', {text:'Update'});
+                    updateUsernameButton.click(function() {
+                        BrowsePage_Ajax.update_username(newUsernameInput.val(), editUsernamePasswordInput.val());
+                        BrowsePage_Variable.userAccountEdit.hide();
+                        BrowsePage_Variable.disableCurtain.hide();
+                    });
+                    editUsernameContainer.append(updateUsernameButton);
+                    BrowsePage_Variable.userAccountEdit.append(editUsernameContainer);
+                    //editPassword
+                    var editPasswordContainer = $('<div />');
+                    var editPasswordTable = TableCreator.create_table();
+                    var newPasswordRow = TableCreator.create_table_row();
+                    newPasswordRow.add_entry('New Password');
+                    var newPasswordInput = $('<input />', {type: 'password'});
+                    newPasswordInput.change(function() {
+                        var newPasswordValue = newPasswordInput.val();
+                        var repeatPasswordValue = repeatPasswordInput.val();
+                        if(newPasswordValue.length > 0 && (newPasswordValue == repeatPasswordValue)) {
+                            updatePasswordButton.prop('disabled', false);
+                            repeatPasswordInput.css("background-color", "#FFFFFF");
+                        }
+                        else {
+                            updatePasswordButton.prop('disabled', true);
+                            repeatPasswordInput.css("background-color", "#CC6666");
+                        }
+                    });
+                    newPasswordRow.add_entry(newPasswordInput);
+                    editPasswordTable.add_content_row(newPasswordRow);
+                    var repeatPasswordRow = TableCreator.create_table_row();
+                    repeatPasswordRow.add_entry('Repeat Password');
+                    var repeatPasswordInput = $('<input />', {type: 'password'});
+                    repeatPasswordInput.change(function() {
+                        var newPasswordValue = newPasswordInput.val();
+                        var repeatPasswordValue = repeatPasswordInput.val();
+                        if(newPasswordValue.length > 0 && (newPasswordValue == repeatPasswordValue)) {
+                            updatePasswordButton.prop('disabled', false);
+                            repeatPasswordInput.css("background-color", "#FFFFFF");
+                        }
+                        else {
+                            updatePasswordButton.prop('disabled', true);
+                            repeatPasswordInput.css("background-color", "#CC6666");
+                        }
+                    });
+                    repeatPasswordRow.add_entry(repeatPasswordInput);
+                    editPasswordTable.add_content_row(repeatPasswordRow);
+                    var oldPasswordRow = TableCreator.create_table_row();
+                    oldPasswordRow.add_entry('Old Password');
+                    var oldPasswordInput = $('<input />', {type: 'password'});
+                    oldPasswordRow.add_entry(oldPasswordInput);
+                    editPasswordTable.add_content_row(oldPasswordRow);
+                    editPasswordContainer.append(editPasswordTable);
+                    var updatePasswordButton = $('<button />', {text:'Update'});
+                    updatePasswordButton.prop("disabled", true);
+                    updatePasswordButton.click(function() {
+                        BrowsePage_Ajax.update_password(newPasswordInput.val(), oldPasswordInput.val());
+                        BrowsePage_Variable.userAccountEdit.hide();
+                        BrowsePage_Variable.disableCurtain.hide();
+                    });
+                    editPasswordContainer.append(updatePasswordButton);
+                    BrowsePage_Variable.userAccountEdit.append(editPasswordContainer);
+                    editPasswordContainer.hide();
+                    //Radio button
+                    var radioContainer = $('<div />');
+                    BrowsePage_Variable.userAccountEdit.prepend(radioContainer);
+                    var radioUsername = $('<input type="radio" name="username_password" value="username" checked/>');
+                    radioUsername.click(function() {
+                        editUsernameContainer.show();
+                        editPasswordContainer.hide();
+                    });
+                    radioContainer.append(radioUsername);
+                    radioContainer.append('useranme');
+                    var radioPassword = $('<input type="radio" name="username_password" value="password"/>');
+                    radioPassword.click(function() {
+                        editUsernameContainer.hide();
+                        editPasswordContainer.show();
+                    });
+                    radioContainer.append(radioPassword);
+                    radioContainer.append('password');
+
+                    var cancelButton = $('<button />', {text: 'Cancel'});
+                    cancelButton.on('click', function(){
+                        BrowsePage_Variable.userAccountEdit.hide();
+                        BrowsePage_Variable.disableCurtain.hide();
+                    });
+                    BrowsePage_Variable.userAccountEdit.append(cancelButton);
+
+                    $('body').append(BrowsePage_Variable.userAccountEdit);
+                    BrowsePage_Variable.userAccountEdit.hide();
                 }
             };
             var BrowsePage_Method = {
@@ -215,8 +350,10 @@
                                     }
                                 }
                             }
+                            else if(reply.message == "Prohibited") {
+                                window.location = "Login.php";
+                            }
                             else {
-                                console.log(reply);
                                 BrowsePage_Variable.alertBox.show_message("Query error");
                             }
                         },
@@ -254,6 +391,9 @@
                                     insertRow.add_insert_button();
                                     BrowsePage_Variable.theTable.add_content_row(insertRow);
                                 }
+                            }
+                            else if(reply.message == "Prohibited") {
+                                window.location = "Login.php";
                             }
                             else {
                                 BrowsePage_Variable.alertBox.show_message("Query error");
@@ -326,6 +466,9 @@
                                 BrowsePage_Ajax.get_table_content(tableName);
                                 //console.log("Successfull")
                             }
+                            else if(reply.message == "Prohibited") {
+                                window.location = "Login.php";
+                            }
                             else {
                                 BrowsePage_Variable.alertBox.show_message("Insert Failed: " + reply.Message);
                                 //console.log("Failed")
@@ -350,6 +493,9 @@
                             if(reply.Status == 'Good') {
                                 BrowsePage_Ajax.get_table_content(tableName);
                             }
+                            else if(reply.message == "Prohibited") {
+                                window.location = "Login.php";
+                            }
                             else {
                                 BrowsePage_Variable.alertBox.show_message("Delete Failed: " + reply.Message);
                             }
@@ -368,10 +514,8 @@
                         url: 'BackendQuery.php',
                         data: "postData=" + JSON.stringify(toPost),
                         success: function(data) {
-                            console.log(data);
                             var reply = JSON.parse(data);
                             if(reply.Status == "Good") {
-                                //redirect
                                 if(reply.Data != undefined) {
                                     if(reply.Data.Value != undefined) {
                                         theList.remove_all_option();
@@ -382,10 +526,75 @@
                                     }
                                 }
                             }
-                            else {
+                            else if(reply.message == "Prohibited") {
+                                window.location = "Login.php";
                             }
                         },
                         error: function(data) {
+                            BrowsePage_Variable.alertBox.show_message("Get table name timeout");
+                        }
+                    });
+                },
+                logout : function() {
+                    var toPost = {};
+                    toPost.Command = "Logout";
+                    $.ajax({
+                        type: 'POST',
+                        url: 'BackendLogin.php',
+                        data: 'postData=' + JSON.stringify(toPost),
+                        success: function(data) {
+                            window.location = "Login.php";
+                        },
+                        error: function(data) {
+
+                        }
+                    });
+                },
+                update_username : function(newUsername, password) {
+                    //console.log("Going to update username, newUsername " + newUsername + " password " + password);
+                    var toPost = {};
+                    toPost.Command = "ChangeUsername";
+                    toPost.Username = newUsername;
+                    toPost.Password = password;
+                    $.ajax({
+                        type: "POST",
+                        url: 'BackendLogin.php',
+                        data: "postData=" + JSON.stringify(toPost),
+                        success: function(data) {
+                            var reply = JSON.parse(data);
+                            if(reply.Status == "Good") {
+                                BrowsePage_Variable.alertBox.show_message("Username updated");
+                            }
+                            else {
+                                BrowsePage_Variable.alertBox.show_message("Update username failed");
+                            }
+                        },
+                        error: function(data) {
+                            BrowsePage_Variable.alertBox.show_message("Update username timeout");
+                        }
+                    });
+                },
+                update_password : function(newPassword, oldPassword) {
+                    //console.log("Going to update password, newPassword " + newPassword + " oldePassword " + oldPassword);
+                    var toPost = {};
+                    toPost.Command = "ChangePassword";
+                    toPost.Password = oldPassword;
+                    toPost.NewPassword = newPassword;
+                    $.ajax({
+                        type: "POST",
+                        url: 'BackendLogin.php',
+                        data: "postData=" + JSON.stringify(toPost),
+                        success: function(data) {
+                            var reply = JSON.parse(data);
+                            if(reply.Status == "Good") {
+                                BrowsePage_Variable.alertBox.show_message("Password updated");
+                            }
+                            else {
+                                BrowsePage_Variable.alertBox.show_message("Update password failed");
+                            }
+                        },
+                        error: function(data) {
+                            BrowsePage_Variable.alertBox.show_message("Update password timeout");
                         }
                     });
                 }
@@ -397,27 +606,8 @@
                 BrowsePage_Variable.init_disable_curtain();
                 BrowsePage_Variable.init_alert_box();
                 BrowsePage_Variable.init_update_button();
-                //BrowsePage_Variable.init_disable_curtain();
-                //BrowsePage_Variable.init_alert_box();
-/*
-                var aTable = TableCreator.create_table('StripeTable');
-                var aRow = TableCreator.create_table_row();
-                aRow.add_entry("one");
-                aRow.add_entry("two");
-                aRow.add_entry("three");
-                aTable.add_label_row(aRow);
-                var contentRow = TableCreator.create_table_row();
-                contentRow.add_entry($('<button />', {text: "fsdfsd"}));
-                contentRow.add_entry($('<input />', {type: "text"}));
-                contentRow.add_entry("dsdfsf");
-                aTable.add_content_row(contentRow);
-                var contentRow2 = TableCreator.create_table_row();
-                contentRow2.add_entry($('<button />', {text: "fsdfsd"}));
-                contentRow2.add_entry($('<input />', {type: "text"}));
-                contentRow2.add_entry("dsdfsf");
-                aTable.add_content_row(contentRow2);
-                $("#BrowsePage_Display").append(aTable);
-*/
+                BrowsePage_Variable.init_user_account_div();
+                BrowsePage_Variable.init_edit_account_div();
             });
         </script>
     </body>

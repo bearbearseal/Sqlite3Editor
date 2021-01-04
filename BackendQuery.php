@@ -1,5 +1,24 @@
 <?php
-	$rawPostData = $_POST["postData"];
+    session_start();
+    if(isset($_SESSION['begin'])) {
+        if(time()-$_SESSION['begin'] > 300) {
+            session_unset();
+            session_destroy();
+            $reply->status = "Bad";
+            $reply->message = "Prohibited";
+            echo json_encode($reply);
+            return;
+        }
+    }
+    else {
+        $reply->status = "Bad";
+        $reply->message = "Prohibited";
+        echo json_encode($reply);
+        return;
+    }
+    $_SESSION['begin'] = time();
+
+    $rawPostData = $_POST["postData"];
     if(!($sock = socket_create(AF_INET, SOCK_DGRAM, 0))) {
         $errorCode = socket_last_error();
         $reply->status = "Bad";
