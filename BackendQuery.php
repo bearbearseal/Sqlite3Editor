@@ -28,7 +28,7 @@
     }
     socket_set_nonblock($sock);
     $outMessage = $rawPostData;
-    if(!socket_sendto($sock, $outMessage, strlen($outMessage), 0, "127.0.0.1", 12345)) {
+    if(!socket_sendto($sock, $outMessage, strlen($outMessage), 0, "127.0.0.1", 10520)) {
         $errorcode = socket_last_error();
         $reply->status = "Bad";
         $reply->message = "Socket error, ".socket_strerror($errorCode)." ".$errorCode;

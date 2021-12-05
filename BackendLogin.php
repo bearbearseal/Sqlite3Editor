@@ -35,7 +35,7 @@
             $jOutMessage["Username"] = $postData["Username"];
             $jOutMessage["Password"] = $postData["Password"];
             $outMessage = json_encode($jOutMessage);
-            if(!socket_sendto($sock, $outMessage, strlen($outMessage), 0, "127.0.0.1", 9090)) {
+            if(!socket_sendto($sock, $outMessage, strlen($outMessage), 0, "127.0.0.1", 10522)) {
                 $errorcode = socket_last_error();
                 $reply->status = "Bad";
                 $reply->message = "Socket error, ".socket_strerror($errorCode)." ".$errorCode;
@@ -79,7 +79,7 @@
     }
     else if($command == "ChangeUsername" || $command == "ChangePassword") {
         $outMessage = $rawPostData;
-        if(!socket_sendto($sock, $outMessage, strlen($outMessage), 0, "127.0.0.1", 9090)) {
+        if(!socket_sendto($sock, $outMessage, strlen($outMessage), 0, "127.0.0.1", 10522)) {
             $errorcode = socket_last_error();
             $reply->status = "Bad";
             $reply->message = "Socket error, ".socket_strerror($errorCode)." ".$errorCode;
